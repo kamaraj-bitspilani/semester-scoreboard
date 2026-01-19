@@ -45,6 +45,53 @@ REQUIRED_COLUMNS = [
     "EC1 Total", "EC2 Mid-Sem", "EC3 Final", "Grand Total", "Grade", "Status"
 ]
 
+def push_to_github_api():
+    """Push changes to GitHub using API token"""
+    try:
+        # GitHub configuration
+        GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")  # From Streamlit secrets
+        REPO_OWNER = "your-username"  # Replace with your GitHub username
+        REPO_NAME = "Marks_tracking_github"  # Your repo name
+        FILE_PATH = "marks.csv"
+        
+        if not GITHUB_TOKEN:
+            return False, "GitHub token not found in secrets"
+        
+        # Read current file content
+        with open(DATA_FILE, 'r') as f:
+            content = f.read()
+        
+        # Get current file SHA (required for updates)
+        get_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
+        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+        
+        response = requests.get(get_url, headers=headers)
+        if response.status_code == 200:
+            current_sha = response.json()["sha"]
+        else:
+            return False, f"Failed to get file info: {response.status_code}"
+        
+        # Push updated content
+        import base64
+        encoded_content = base64.b64encode(content.encode()).decode()
+        
+        commit_data = {
+            "message": f"Update marks data - {time.strftime('%Y-%m-%d %H:%M:%S')}",
+            "content": encoded_content,
+            "sha": current_sha
+        }
+        
+        put_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
+        response = requests.put(put_url, headers=headers, json=commit_data)
+        
+        if response.status_code == 200:
+            return True, "Successfully pushed to GitHub"
+        else:
+            return False, f"Push failed: {response.status_code} - {response.text}"
+            
+    except Exception as e:
+        return False, str(e)
+
 # Load CSV with better error handling for cloud environments
 def load_saved_df() -> pd.DataFrame:
     try:
@@ -388,3 +435,4 @@ st.markdown(
     unsafe_allow_html=True
 
 )
+
