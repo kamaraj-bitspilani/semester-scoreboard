@@ -50,8 +50,8 @@ def push_to_github_api():
     try:
         # GitHub configuration
         GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")  # From Streamlit secrets
-        REPO_OWNER = "your-username"  # Replace with your GitHub username
-        REPO_NAME = "Marks_tracking_github"  # Your repo name
+        REPO_OWNER = "kamaraj-bitspilani"  # Replace with your GitHub username
+        REPO_NAME = "semester-scoreboard"  # Your repo name
         FILE_PATH = "marks.csv"
         
         if not GITHUB_TOKEN:
@@ -443,5 +443,6 @@ st.markdown(
     unsafe_allow_html=True
 
 )
+
 
 
