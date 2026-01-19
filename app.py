@@ -383,8 +383,7 @@ format_map = {col: "{:.1f}" for col in numeric_cols}
 
 st.dataframe(display_df[display_columns].style.format(format_map), use_container_width=True)
 
-# Save button with cloud-compatible error handling
-if st.button(f"💾 Save changes to {DATA_FILE}"):
+if st.button(f"💾 Save & Push to GitHub"):
     try:
         # Ensure all required columns exist in save output
         save_df = df.copy()
@@ -396,7 +395,15 @@ if st.button(f"💾 Save changes to {DATA_FILE}"):
         save_df.to_csv(DATA_FILE, index=False)
         # Update session state
         st.session_state.df_data = save_df
-        st.success(f"✅ Saved marks successfully!")
+        
+        # Push to GitHub using API
+        with st.spinner("Pushing changes to GitHub..."):
+            success, message = push_to_github_api()
+            if success:
+                st.success(f"✅ {message}")
+            else:
+                st.warning(f"✅ Saved locally! GitHub push failed: {message}")
+                
     except PermissionError:
         # Update session state even if file save fails
         st.session_state.df_data = df.copy()
@@ -405,6 +412,7 @@ if st.button(f"💾 Save changes to {DATA_FILE}"):
         # Update session state as fallback
         st.session_state.df_data = df.copy()
         st.warning(f"📝 Data saved to session. File save error: {str(e)[:50]}...")
+
 
 # Charts
 st.subheader("📈 Performance Overview")
@@ -435,4 +443,5 @@ st.markdown(
     unsafe_allow_html=True
 
 )
+
 
