@@ -5,6 +5,13 @@ from pathlib import Path
 import os
 import requests
 import json
+import requests  # Add this line
+import base64   # Add this line
+
+# GitHub configuration (replace with your actual values)
+GITHUB_TOKEN = "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" # Replace with your real token
+REPO_OWNER = "kamaraj-bitspilani"         # Replace with your GitHub username
+REPO_NAME = "semester-scoreboard"
 
 st.set_page_config(
     page_title="Semester Scoreboard", 
@@ -384,6 +391,7 @@ format_map = {col: "{:.1f}" for col in numeric_cols}
 
 st.dataframe(display_df[display_columns].style.format(format_map), use_container_width=True)
 
+# Save button with cloud-compatible error handling and GitHub push
 if st.button(f"💾 Save & Push to GitHub"):
     try:
         # Ensure all required columns exist in save output
@@ -399,11 +407,43 @@ if st.button(f"💾 Save & Push to GitHub"):
         
         # Push to GitHub using API
         with st.spinner("Pushing changes to GitHub..."):
-            success, message = push_to_github_api()
-            if success:
-                st.success(f"✅ {message}")
-            else:
-                st.warning(f"✅ Saved locally! GitHub push failed: {message}")
+            try:
+                # Get current file SHA
+                get_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/marks.csv"
+                headers = {
+                    "Authorization": f"Bearer {GITHUB_TOKEN}",  # Changed to Bearer
+                    "Accept": "application/vnd.github.v3+json"
+                }
+                
+                response = requests.get(get_url, headers=headers)
+                
+                if response.status_code == 200:
+                    current_sha = response.json()["sha"]
+                    
+                    # Read file content
+                    with open(DATA_FILE, 'r') as f:
+                        content = f.read()
+                    
+                    # Push updated content
+                    encoded_content = base64.b64encode(content.encode()).decode()
+                    commit_data = {
+                        "message": f"Update marks data - {time.strftime('%Y-%m-%d %H:%M:%S')}",
+                        "content": encoded_content,
+                        "sha": current_sha
+                    }
+                    
+                    put_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/marks.csv"
+                    response = requests.put(put_url, headers=headers, json=commit_data)
+                    
+                    if response.status_code == 200:
+                        st.success("✅ Saved and pushed to GitHub successfully!")
+                    else:
+                        st.warning(f"✅ Saved locally! GitHub push failed: {response.status_code} - {response.text}")
+                else:
+                    st.warning(f"✅ Saved locally! GitHub auth failed: {response.status_code} - {response.text}")
+                    
+            except Exception as e:
+                st.warning(f"✅ Saved locally! GitHub push error: {str(e)}")
                 
     except PermissionError:
         # Update session state even if file save fails
@@ -444,6 +484,7 @@ st.markdown(
     unsafe_allow_html=True
 
 )
+
 
 
 
