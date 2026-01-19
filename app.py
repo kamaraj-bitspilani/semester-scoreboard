@@ -3,6 +3,8 @@ import pandas as pd
 import altair as alt
 from pathlib import Path
 import os
+import requests
+import json
 
 st.set_page_config(
     page_title="Semester Scoreboard", 
@@ -384,4 +386,5 @@ st.markdown(
     </div>
     """, 
     unsafe_allow_html=True
+
 )
